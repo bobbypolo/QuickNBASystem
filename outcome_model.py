@@ -41,16 +41,17 @@ FOUL_GAME_MULTIPLIER = 1.20
 REGULATION_QUARTER_SECONDS = 720
 
 
-def _scale_rates(team_ppp: float, intensity: float) -> dict[str, float]:
+def _scale_rates(team_ppp: float, intensity: "float | np.ndarray") -> dict:
     """Scale base shooting rates by team efficiency and quarter intensity.
 
     Returns dict with adjusted rates for expected value calculation.
+    Accepts scalar or array intensity (array → per-sim rates).
     """
     scale = np.clip(team_ppp * intensity / LEAGUE_AVG_EPV, 0.3, 2.5)
 
-    fg2_make = min(FG2_MAKE_RATE * scale, MAX_FG2_MAKE)
-    fg3_make = min(FG3_MAKE_RATE * scale, MAX_FG3_MAKE)
-    to_rate = max(TURNOVER_RATE / scale, MIN_TO_RATE)
+    fg2_make = np.minimum(FG2_MAKE_RATE * scale, MAX_FG2_MAKE)
+    fg3_make = np.minimum(FG3_MAKE_RATE * scale, MAX_FG3_MAKE)
+    to_rate = np.maximum(TURNOVER_RATE / scale, MIN_TO_RATE)
     ft_make = FT_MAKE_RATE  # FT% doesn't scale with team strength
 
     return {
@@ -79,7 +80,7 @@ def _compute_moments(rates: dict[str, float]) -> tuple[float, float]:
     e_pts_sq = (
         4.0 * p_fg2 + 9.0 * p_fg3 + (1.4**2) * rates["ft_rate"] * rates["ft_make"]
     )
-    var_pts = max(e_pts_sq - e_pts**2, 0.01)
+    var_pts = np.maximum(e_pts_sq - e_pts**2, 0.01)
 
     return e_pts, var_pts
 
@@ -116,6 +117,41 @@ def quarter_intensity(period: int, score_diff: float) -> float:
         base *= GARBAGE_TIERS[0][1]
 
     return base
+
+
+def quarter_intensity_vec(period: int, score_diff_arr: np.ndarray) -> np.ndarray:
+    """Vectorized quarter_intensity. Returns shape (n_sims,).
+
+    Args:
+        period: 1-4 for regulation, 5+ for OT
+        score_diff_arr: per-sim home - away score entering this period
+
+    Returns:
+        Array of intensity multipliers, shape (n_sims,).
+    """
+    if period >= 5:
+        return np.full_like(score_diff_arr, OT_INTENSITY, dtype=float)
+
+    base = QUARTER_INTENSITY.get(period, 1.0)
+    result = np.full_like(score_diff_arr, base, dtype=float)
+    abs_diff = np.abs(score_diff_arr)
+
+    if period == 4:
+        applied = np.zeros(len(score_diff_arr), dtype=bool)
+        for threshold, multiplier in GARBAGE_TIERS:
+            tier_mask = (abs_diff >= threshold) & ~applied
+            result = np.where(tier_mask, base * multiplier, result)
+            applied = applied | tier_mask
+        # Foul game boost for Q4 close games (no tier applied)
+        foul_mask = ~applied & (abs_diff < FOUL_GAME_MARGIN)
+        foul_fraction = FOUL_GAME_TIME / REGULATION_QUARTER_SECONDS
+        foul_boost = base * (1.0 + (FOUL_GAME_MULTIPLIER - 1.0) * foul_fraction)
+        result = np.where(foul_mask, foul_boost, result)
+    elif period == 3:
+        blowout_mask = abs_diff >= GARBAGE_TIERS[0][0]
+        result = np.where(blowout_mask, base * GARBAGE_TIERS[0][1], result)
+
+    return result
 
 
 def sample_quarter_scores(

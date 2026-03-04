@@ -8,8 +8,12 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Optional
 
-from pace_engine import predict_period_possessions
-from outcome_model import quarter_intensity, sample_quarter_scores
+from pace_engine import predict_period_possessions, predict_period_possessions_vec
+from outcome_model import (
+    quarter_intensity,
+    quarter_intensity_vec,
+    sample_quarter_scores,
+)
 
 # ── Constants ────────────────────────────────────────────────────────────────
 HOME_COURT_ADVANTAGE = 2.5  # points added to home team score (total game)
@@ -198,13 +202,13 @@ def simulate_game(
     away_scores = np.zeros(n_sims)
 
     for period in range(1, 5):
-        # Use median score diff across sims for pace engine (keeps vectorized perf)
-        median_diff = float(np.median(home_scores - away_scores))
+        # Per-sim game-state tracking (fixes median-diff bug)
+        per_sim_diffs = home_scores - away_scores
 
-        possessions = predict_period_possessions(
-            home_pace, away_pace, period, median_diff
+        possessions_vec = predict_period_possessions_vec(
+            home_pace, away_pace, period, per_sim_diffs
         )
-        intensity = quarter_intensity(period, median_diff)
+        intensity_vec = quarter_intensity_vec(period, per_sim_diffs)
 
         # Generate correlated noise (Phase 6)
         z1 = rng.standard_normal(n_sims)
@@ -213,10 +217,10 @@ def simulate_game(
         a_noise = QUARTER_CORRELATION * z1 + np.sqrt(1 - QUARTER_CORRELATION**2) * z2
 
         home_q = sample_quarter_scores(
-            home_base_ppp, possessions, intensity, n_sims, rng, noise=h_noise
+            home_base_ppp, possessions_vec, intensity_vec, n_sims, rng, noise=h_noise
         )
         away_q = sample_quarter_scores(
-            away_base_ppp, possessions, intensity, n_sims, rng, noise=a_noise
+            away_base_ppp, possessions_vec, intensity_vec, n_sims, rng, noise=a_noise
         )
 
         home_scores += np.round(home_q + hca_quarter)

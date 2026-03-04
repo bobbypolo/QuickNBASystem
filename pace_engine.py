@@ -3,6 +3,7 @@ Pace Engine — Quarter-level possession estimation with score-elastic adjustmen
 Ported from nba-production-system/engine/pace_engine.py.
 """
 
+import numpy as np
 
 # Period-specific pace multipliers (regulation Q1-Q4, overtime Q5+)
 PERIOD_FACTORS: dict[int, float] = {1: 1.02, 2: 0.97, 3: 1.00, 4: 1.04, 5: 1.08}
@@ -76,3 +77,51 @@ def predict_period_possessions(
     else:
         # Overtime: 5 minutes out of 48
         return bp * pf * state_f * 5.0 / 48.0
+
+
+def _score_state_factor_vec(
+    score_diff_arr: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Vectorized score_state_factor. Returns (home_factors, away_factors) arrays."""
+
+    abs_diff = np.abs(score_diff_arr)
+    home_f = np.ones_like(score_diff_arr, dtype=float)
+    away_f = np.ones_like(score_diff_arr, dtype=float)
+
+    home_leading = score_diff_arr > 0
+    away_leading = score_diff_arr < 0
+
+    comfortable = (abs_diff >= COMFORTABLE_MARGIN) & (abs_diff < BLOWOUT_MARGIN)
+    blowout = abs_diff >= BLOWOUT_MARGIN
+
+    home_f = np.where(comfortable & home_leading, 0.95, home_f)
+    away_f = np.where(comfortable & home_leading, 1.02, away_f)
+    home_f = np.where(comfortable & away_leading, 1.02, home_f)
+    away_f = np.where(comfortable & away_leading, 0.95, away_f)
+
+    home_f = np.where(blowout & home_leading, 0.88, home_f)
+    away_f = np.where(blowout & home_leading, 1.05, away_f)
+    home_f = np.where(blowout & away_leading, 1.05, home_f)
+    away_f = np.where(blowout & away_leading, 0.88, away_f)
+
+    return home_f, away_f
+
+
+def predict_period_possessions_vec(
+    home_pace: float,
+    away_pace: float,
+    period: int,
+    score_diff_arr: np.ndarray,
+) -> np.ndarray:
+    """Vectorized predict_period_possessions. Returns shape (n_sims,)."""
+
+    bp = base_pace(home_pace, away_pace)
+    pf = PERIOD_FACTORS.get(min(period, 5), PERIOD_FACTORS[5])
+
+    home_f, away_f = _score_state_factor_vec(score_diff_arr)
+    state_f = (home_f + away_f) / 2.0
+
+    if period <= 4:
+        return np.asarray(bp * pf * state_f / 4.0)
+    else:
+        return np.asarray(bp * pf * state_f * 5.0 / 48.0)

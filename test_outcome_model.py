@@ -106,6 +106,37 @@ def test_q4_tier_15_19():
     )
 
 
+def test_quarter_intensity_vec_q4_shape_and_order():
+    """R-P3-02: vec Q4 returns shape (3,), blowout elements < close element."""
+    import numpy as np
+    from outcome_model import quarter_intensity_vec
+
+    score_diffs = np.array([-31.0, 0.0, 31.0])
+    result = quarter_intensity_vec(4, score_diffs)
+
+    assert result.shape == (3,), f"Expected shape (3,), got {result.shape}"
+    # Elements 0 and 2 are blowouts (31pt); element 1 is close (foul game boost)
+    assert result[0] < result[1], (
+        f"Blowout trailing ({result[0]:.4f}) should be < close game ({result[1]:.4f})"
+    )
+    assert result[2] < result[1], (
+        f"Blowout leading ({result[2]:.4f}) should be < close game ({result[1]:.4f})"
+    )
+
+
+def test_quarter_intensity_vec_q3_blowout():
+    """R-P3-03: Q3 blowout elements < 0.76 (30+ tier applies in Q3)."""
+    import numpy as np
+    from outcome_model import quarter_intensity_vec
+
+    score_diffs = np.array([-31.0, 0.0, 31.0])
+    result = quarter_intensity_vec(3, score_diffs)
+
+    assert result.shape == (3,), f"Expected shape (3,), got {result.shape}"
+    assert result[0] < 0.76, f"Q3 blowout trailing ({result[0]:.4f}) should be < 0.76"
+    assert result[2] < 0.76, f"Q3 blowout leading ({result[2]:.4f}) should be < 0.76"
+
+
 if __name__ == "__main__":
     test_epv_scale_bounded()
     test_garbage_time_reduces_scoring()
@@ -118,4 +149,6 @@ if __name__ == "__main__":
     test_q4_blowout_tier_30()
     test_q3_blowout_trigger()
     test_q4_tier_15_19()
+    test_quarter_intensity_vec_q4_shape_and_order()
+    test_quarter_intensity_vec_q3_blowout()
     print("All outcome_model tests passed.")

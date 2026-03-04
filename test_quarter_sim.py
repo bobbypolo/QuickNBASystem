@@ -88,6 +88,20 @@ def test_existing_tests_pass():
     assert result.n_sims == 10_000
 
 
+def test_blowout_tail_present():
+    """R-P3-04: Strong favorite (ortg=130) vs weak opponent (ortg=100) → std(margin) > 12."""
+    home = TeamInput(name="Strong", abbr="STR", pace=100.0, ortg=130.0, drtg=100.0)
+    away = TeamInput(name="Weak", abbr="WEK", pace=100.0, ortg=100.0, drtg=130.0)
+
+    result = simulate_game(home, away, game_id="blowout", n_sims=50_000, seed=42)
+    std_margin = float(np.std(result.margin))
+
+    assert std_margin > 12.0, (
+        f"Blowout tail test: std(margin)={std_margin:.2f} should be > 12.0 "
+        f"(median-diff bug would suppress this)"
+    )
+
+
 if __name__ == "__main__":
     print("Running quarter sim tests...")
     test_no_ties_after_ot()

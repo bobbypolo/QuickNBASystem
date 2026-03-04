@@ -1,4 +1,4 @@
-# Tests R-P3-07
+# Tests R-P3-07, R-P3-01
 from pace_engine import (
     base_pace,
     predict_period_possessions,
@@ -66,6 +66,26 @@ def test_regulation_possessions():
     assert abs(poss - expected) < 0.1, f"Expected {expected}, got {poss}"
 
 
+def test_predict_period_possessions_vec_shape_and_order():
+    """R-P3-01: vec function returns shape (3,) and blowout states have fewer
+    possessions than neutral (both symmetric blowout elements < neutral element 1)."""
+    import numpy as np
+    from pace_engine import predict_period_possessions_vec
+
+    score_diffs = np.array([-30.0, 0.0, 30.0])
+    result = predict_period_possessions_vec(100.0, 100.0, 4, score_diffs)
+
+    assert result.shape == (3,), f"Expected shape (3,), got {result.shape}"
+    # With equal-pace teams, ±30 are symmetric → [0]==[2], both < neutral [1].
+    # (The leading team slows down at 0.88, trailing speeds up at 1.05; average=0.965<1.0)
+    assert result[0] < result[1], (
+        f"Blowout trailing ({result[0]:.3f}) should have < possessions than neutral ({result[1]:.3f})"
+    )
+    assert result[2] < result[1], (
+        f"Blowout leading ({result[2]:.3f}) should have < possessions than neutral ({result[1]:.3f})"
+    )
+
+
 if __name__ == "__main__":
     test_slower_team_dictates()
     test_period_factors()
@@ -75,4 +95,5 @@ if __name__ == "__main__":
     test_close_game_neutral()
     test_ot_possessions()
     test_regulation_possessions()
+    test_predict_period_possessions_vec_shape_and_order()
     print("All pace_engine tests passed.")
