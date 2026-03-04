@@ -50,6 +50,13 @@ class GameEntry:
     # Injury stacking (Phase 5)
     home_n_key_out: int = 0  # count of key players confirmed out for home team
     away_n_key_out: int = 0  # count of key players confirmed out for away team
+    # Last-10-game ratings (Phase 6 — auto-populated by update_with_live_ratings)
+    home_last10_ortg: Optional[float] = None
+    home_last10_drtg: Optional[float] = None
+    home_last10_pace: Optional[float] = None
+    away_last10_ortg: Optional[float] = None
+    away_last10_drtg: Optional[float] = None
+    away_last10_pace: Optional[float] = None
 
 
 # ── Tonight's Slate ───────────────────────────────────────────────────────────

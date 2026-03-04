@@ -99,12 +99,45 @@ def _make_teams(g: GameEntry):
     home_fatigue = compute_fatigue(home_ctx)
     away_fatigue = compute_fatigue(away_ctx)
 
+    # Recency-weighted ratings (Phase 6): blend last-10 with season average
+    _rw = 0.60
+    home_ortg = (
+        _rw * g.home_last10_ortg + (1 - _rw) * g.home_ortg
+        if g.home_last10_ortg is not None
+        else g.home_ortg
+    )
+    home_drtg = (
+        _rw * g.home_last10_drtg + (1 - _rw) * g.home_drtg
+        if g.home_last10_drtg is not None
+        else g.home_drtg
+    )
+    home_pace = (
+        _rw * g.home_last10_pace + (1 - _rw) * g.home_pace
+        if g.home_last10_pace is not None
+        else g.home_pace
+    )
+    away_ortg = (
+        _rw * g.away_last10_ortg + (1 - _rw) * g.away_ortg
+        if g.away_last10_ortg is not None
+        else g.away_ortg
+    )
+    away_drtg = (
+        _rw * g.away_last10_drtg + (1 - _rw) * g.away_drtg
+        if g.away_last10_drtg is not None
+        else g.away_drtg
+    )
+    away_pace = (
+        _rw * g.away_last10_pace + (1 - _rw) * g.away_pace
+        if g.away_last10_pace is not None
+        else g.away_pace
+    )
+
     home = TeamInput(
         name=g.home_name,
         abbr=g.home_abbr,
-        pace=g.home_pace,
-        ortg=g.home_ortg,
-        drtg=g.home_drtg,
+        pace=home_pace,
+        ortg=home_ortg,
+        drtg=home_drtg,
         injury_adj=g.home_injury_adj * injury_stacking_multiplier(g.home_n_key_out),
         pace_mult=home_fatigue.pace_mult,
         ortg_mult=home_fatigue.ortg_mult,
@@ -113,9 +146,9 @@ def _make_teams(g: GameEntry):
     away = TeamInput(
         name=g.away_name,
         abbr=g.away_abbr,
-        pace=g.away_pace,
-        ortg=g.away_ortg,
-        drtg=g.away_drtg,
+        pace=away_pace,
+        ortg=away_ortg,
+        drtg=away_drtg,
         injury_adj=g.away_injury_adj * injury_stacking_multiplier(g.away_n_key_out),
         pace_mult=away_fatigue.pace_mult,
         ortg_mult=away_fatigue.ortg_mult,
