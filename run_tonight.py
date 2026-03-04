@@ -15,14 +15,16 @@ import argparse
 import os
 import sys
 from datetime import datetime, timedelta
+from typing import Dict, List
 from zoneinfo import ZoneInfo
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
-from typing import Dict, List
-
+from calibration import haircut_prob, spread_underdog_cap
+from fatigue import ScheduleContext, compute_fatigue
 from game_data import GAMES, GameEntry, print_slate_summary, update_with_live_odds  # noqa: F401
+from market_blender import blend_probability
 from parlay import ParlayLeg, evaluate_mg_parlay, evaluate_sgp, print_parlay_result
 from simulator import (
     SimResult,
@@ -32,9 +34,18 @@ from simulator import (
     format_american,
     simulate_game,
 )
-from calibration import haircut_prob, spread_underdog_cap
-from fatigue import ScheduleContext, compute_fatigue
-from market_blender import blend_probability
+
+
+# ── Calibration log helper ────────────────────────────────────────────────────
+def _try_log_prediction(*args, **kwargs) -> None:
+    """Call log_prediction() wrapped in try/except so logging never aborts a live run."""
+    try:
+        from calibration_log import log_prediction
+
+        log_prediction(*args, **kwargs)
+    except Exception:
+        pass
+
 
 # ── Config ────────────────────────────────────────────────────────────────────
 N_SIMS = 10_000
@@ -444,6 +455,22 @@ def main() -> None:
 
             print(
                 f"  [{r['type']:6s}] {r['game']:8s}  {r['bet']:25s}  edge={r['edge']:.1f}pt  p={p:.1%}"
+            )
+            # Log for backtest calibration (fails silently if unavailable)
+            bt = (
+                "spread_home"
+                if leg.bet_type == "home_spread"
+                else ("spread_away" if leg.bet_type == "away_spread" else leg.bet_type)
+            )
+            _try_log_prediction(
+                datetime.now().strftime("%Y-%m-%d"),
+                r["game"],
+                bt,
+                leg.line,
+                raw_p,
+                p,
+                r["edge"],
+                rank=recs_sorted.index(r) + 1,
             )
 
     # ── Parlay Analysis ───────────────────────────────────────────────────────
