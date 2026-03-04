@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/post_compact_restore.py"
+            "command": "python .claude/hooks/post_compact_restore.py"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/pre_bash_guard.py"
+            "command": "python .claude/hooks/pre_bash_guard.py"
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/post_bash_capture.py"
+            "command": "python .claude/hooks/post_bash_capture.py"
           }
         ]
       },
@@ -36,11 +36,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/post_format.py"
+            "command": "python .claude/hooks/post_format.py"
           },
           {
             "type": "command",
-            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/post_write_prod_scan.py"
+            "command": "python .claude/hooks/post_write_prod_scan.py"
           }
         ]
       }
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/stop_verify_gate.py 2>/dev/null; true"
+            "command": "python .claude/hooks/stop_verify_gate.py 2>/dev/null; true"
           }
         ]
       }
