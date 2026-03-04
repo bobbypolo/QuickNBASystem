@@ -1,20 +1,28 @@
+# Python bytecode/caches
 __pycache__/
-*.pyc
-.claude/errors/*.json
-.claude/errors/*.jsonl
-research/
-.claude/settings.local.json
-*.log
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.benchmarks/
+
+# Environment/secrets
 .env
-.DS_Store
-.claude/ralph-state.json
-.claude/ralph-sprint-state.json
-.claude/worktrees/
-.claude/docs/verification-log.md
-.claude/docs/verification-log.jsonl
-.claude/docs/progress.md
-.claude/.workflow-state.json
-# Prevent nested .claude dirs from accidental CWD-drift hook runs
-.claude/hooks/.claude/
+.env.*
+!.env.example
 .mcp.json
+
+# Local runtime artifacts
+*.log
+*.db
 predictions.db
+research/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local agent/workflow directories (do not publish)
+.claude/
+.codex/
