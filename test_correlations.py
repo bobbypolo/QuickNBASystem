@@ -1,4 +1,4 @@
-# Tests R-P1-10
+# Tests R-P1-10, R-P1-01, R-P1-02, R-P1-03
 import numpy as np
 from correlations import (
     FULL_CORRELATION_MATRIX,
@@ -94,6 +94,29 @@ def test_parlayleg_backward_compatible():
     assert leg.book_odds is None
 
 
+def test_cross_game_same_type_returns_rho():
+    """R-P1-01: get_correlation(same_game=False) for same type returns CROSS_GAME_SAME_TYPE_RHO."""
+    from correlations import CROSS_GAME_SAME_TYPE_RHO
+
+    rho = get_correlation("team_win", "team_win", same_game=False)
+    assert rho == CROSS_GAME_SAME_TYPE_RHO == 0.15, f"Expected 0.15, got {rho}"
+
+
+def test_same_game_same_type_returns_one():
+    """R-P1-02: get_correlation(same_game=True) for same type returns 1.0 (diagonal)."""
+    rho = get_correlation("team_win", "team_win", same_game=True)
+    assert abs(rho - 1.0) < 0.001, f"Expected 1.0, got {rho}"
+
+
+def test_cross_game_parlay_not_inflated():
+    """R-P1-03: Two same-type legs across different games → joint in [0.30, 0.42]."""
+    joint = correlated_parlay_prob([0.6, 0.6], ["team_win", "team_win"], seed=42)
+    assert 0.30 <= joint <= 0.42, (
+        f"Cross-game same-type joint {joint:.4f} outside [0.30, 0.42] — "
+        f"was it using diagonal 1.0 instead of 0.15?"
+    )
+
+
 if __name__ == "__main__":
     test_matrix_symmetric()
     test_diagonal_ones()
@@ -104,4 +127,7 @@ if __name__ == "__main__":
     test_single_leg_returns_marginal()
     test_uncorrelated_approx_product()
     test_parlayleg_backward_compatible()
+    test_cross_game_same_type_returns_rho()
+    test_same_game_same_type_returns_one()
+    test_cross_game_parlay_not_inflated()
     print("All correlations tests passed.")

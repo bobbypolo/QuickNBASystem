@@ -34,6 +34,7 @@ FULL_CORRELATION_MATRIX = np.array(
 
 SAME_TEAM_BOOST = 0.08
 CORRELATION_CAP = 0.95
+CROSS_GAME_SAME_TYPE_RHO = 0.15
 
 # Map bet_type strings to correlation label indices
 BET_TYPE_TO_LABEL: dict[str, str] = {
@@ -48,13 +49,16 @@ BET_TYPE_TO_LABEL: dict[str, str] = {
 _LABEL_TO_IDX = {label: i for i, label in enumerate(CORRELATION_LABELS)}
 
 
-def get_correlation(type1: str, type2: str, same_team: bool = False) -> float:
+def get_correlation(
+    type1: str, type2: str, same_team: bool = False, same_game: bool = False
+) -> float:
     """Look up base correlation between two bet types.
 
     Args:
         type1: Correlation label (e.g., "team_win", "game_total")
         type2: Correlation label
         same_team: Whether both legs are on the same team
+        same_game: Whether both legs are from the same game (SGP use case)
 
     Returns:
         Correlation coefficient, clipped to [-CORRELATION_CAP, CORRELATION_CAP]
@@ -63,6 +67,14 @@ def get_correlation(type1: str, type2: str, same_team: bool = False) -> float:
     idx2 = _LABEL_TO_IDX.get(type2)
     if idx1 is None or idx2 is None:
         return 0.0
+
+    # Same-type handling: diagonal depends on same_game context
+    if type1 == type2:
+        # SGP legs in same game → perfect correlation (diagonal)
+        if same_game:
+            return 1.0
+        # Cross-game same-type → empirical cross-game rho (not 1.0)
+        return CROSS_GAME_SAME_TYPE_RHO
 
     rho = FULL_CORRELATION_MATRIX[idx1, idx2]
 
@@ -84,6 +96,7 @@ def correlated_parlay_prob(
     marginal_probs: list[float],
     leg_types: list[str],
     same_team_flags: list[list[bool]] | None = None,
+    game_ids: list[str] | None = None,
     n_sims: int = 50_000,
     seed: int | None = None,
 ) -> float:
@@ -110,7 +123,10 @@ def correlated_parlay_prob(
     for i in range(n):
         for j in range(i + 1, n):
             same_team = same_team_flags[i][j] if same_team_flags is not None else False
-            rho = get_correlation(leg_types[i], leg_types[j], same_team=same_team)
+            same_game = (game_ids[i] == game_ids[j]) if game_ids is not None else False
+            rho = get_correlation(
+                leg_types[i], leg_types[j], same_team=same_team, same_game=same_game
+            )
             corr_matrix[i, j] = rho
             corr_matrix[j, i] = rho
 

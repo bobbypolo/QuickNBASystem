@@ -26,9 +26,15 @@ MIN_TO_RATE = 0.05
 QUARTER_INTENSITY: dict[int, float] = {1: 1.00, 2: 0.98, 3: 1.02, 4: 1.08}
 OT_INTENSITY = 1.12
 
-# Game-state modifiers for Q4
-GARBAGE_TIME_MARGIN = 25
-GARBAGE_MULTIPLIER = 0.90
+# Graduated garbage-time tiers (margin_threshold, intensity_multiplier)
+# Q4: first matching tier applied. Q3: only the 30+ tier applies.
+GARBAGE_TIERS: list[tuple[float, float]] = [
+    (30.0, 0.72),  # 30+ margin → bench mob (Q3 and Q4)
+    (25.0, 0.80),  # 25-29 → mostly garbage time (Q4 only)
+    (20.0, 0.88),  # 20-24 → deep bench entering (Q4 only)
+    (15.0, 0.95),  # 15-19 → starters slowing (Q4 only)
+]
+
 FOUL_GAME_MARGIN = 8
 FOUL_GAME_TIME = 120  # seconds
 FOUL_GAME_MULTIPLIER = 1.20
@@ -93,14 +99,21 @@ def quarter_intensity(period: int, score_diff: float) -> float:
 
     base = QUARTER_INTENSITY.get(period, 1.0)
 
+    abs_diff = abs(score_diff)
+
     if period == 4:
-        abs_diff = abs(score_diff)
-        if abs_diff >= GARBAGE_TIME_MARGIN:
-            base *= GARBAGE_MULTIPLIER
-        elif abs_diff < FOUL_GAME_MARGIN:
-            # Foul game: fractionally apply boost weighted by time fraction
-            foul_fraction = FOUL_GAME_TIME / REGULATION_QUARTER_SECONDS
-            base *= 1.0 + (FOUL_GAME_MULTIPLIER - 1.0) * foul_fraction
+        for threshold, multiplier in GARBAGE_TIERS:
+            if abs_diff >= threshold:
+                base *= multiplier
+                break
+        else:
+            # No garbage-time tier matched → check foul-game boost
+            if abs_diff < FOUL_GAME_MARGIN:
+                foul_fraction = FOUL_GAME_TIME / REGULATION_QUARTER_SECONDS
+                base *= 1.0 + (FOUL_GAME_MULTIPLIER - 1.0) * foul_fraction
+    elif period == 3 and abs_diff >= GARBAGE_TIERS[0][0]:
+        # Q3 blowout: only the highest tier (30+) applies
+        base *= GARBAGE_TIERS[0][1]
 
     return base
 

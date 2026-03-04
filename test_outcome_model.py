@@ -82,6 +82,30 @@ def test_blowout_q4_lower_scoring():
     assert 18.0 < mean < 32.0, f"Blowout Q4 mean {mean} out of range"
 
 
+def test_q4_blowout_tier_30():
+    """R-P1-04: quarter_intensity(4, 31.0) in [0.77, 0.79] (1.08 * 0.72)."""
+    intensity = quarter_intensity(4, 31.0)
+    assert 0.77 <= intensity <= 0.79, (
+        f"Q4 blowout (31pt) intensity {intensity:.4f} expected in [0.77, 0.79]"
+    )
+
+
+def test_q3_blowout_trigger():
+    """R-P1-05: quarter_intensity(3, 31.0) in [0.72, 0.75] (1.02 * 0.72)."""
+    intensity = quarter_intensity(3, 31.0)
+    assert 0.72 <= intensity <= 0.75, (
+        f"Q3 blowout (31pt) intensity {intensity:.4f} expected in [0.72, 0.75]"
+    )
+
+
+def test_q4_tier_15_19():
+    """R-P1-06: quarter_intensity(4, 16.0) in [1.02, 1.04] (1.08 * 0.95)."""
+    intensity = quarter_intensity(4, 16.0)
+    assert 1.02 <= intensity <= 1.04, (
+        f"Q4 15-19pt tier (16pt) intensity {intensity:.4f} expected in [1.02, 1.04]"
+    )
+
+
 if __name__ == "__main__":
     test_epv_scale_bounded()
     test_garbage_time_reduces_scoring()
@@ -91,4 +115,7 @@ if __name__ == "__main__":
     test_heavier_tails()
     test_ot_intensity_boost()
     test_blowout_q4_lower_scoring()
+    test_q4_blowout_tier_30()
+    test_q3_blowout_trigger()
+    test_q4_tier_15_19()
     print("All outcome_model tests passed.")
