@@ -138,8 +138,8 @@
         "unit": "python -m pytest test_safety_rails.py test_push_parlay.py -v --tb=short",
         "lint": "ruff check run_tonight.py parlay.py"
       },
-      "passed": false,
-      "verificationRef": null
+      "passed": true,
+      "verificationRef": "verification-log.jsonl"
     },
     {
       "id": "STORY-003",
