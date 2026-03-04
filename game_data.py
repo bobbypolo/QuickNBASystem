@@ -47,6 +47,9 @@ class GameEntry:
     away_is_3in4: bool = False
     away_rest_days: float = 1.0
     away_travel_miles: float = 0.0
+    # Injury stacking (Phase 5)
+    home_n_key_out: int = 0  # count of key players confirmed out for home team
+    away_n_key_out: int = 0  # count of key players confirmed out for away team
 
 
 # ── Tonight's Slate ───────────────────────────────────────────────────────────

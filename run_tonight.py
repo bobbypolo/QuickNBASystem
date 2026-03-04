@@ -68,6 +68,17 @@ def _classify_parlay(n_legs: int) -> str:
     return "STANDARD"
 
 
+# ── Injury stacking ───────────────────────────────────────────────────────────
+def injury_stacking_multiplier(n_out: int) -> float:
+    """Non-linear penalty: missing 4 players > 4x missing 1.
+
+    n=0 or 1 → 1.0x, n=2 → 1.15x, n=3 → 1.30x, n=4 → 1.45x, n=5 → 1.60x
+    """
+    if n_out <= 1:
+        return 1.0
+    return 1.0 + 0.15 * (n_out - 1)
+
+
 # ── Build TeamInput from GameEntry ────────────────────────────────────────────
 def _make_teams(g: GameEntry):
     # Compute fatigue multipliers from schedule context
@@ -94,7 +105,7 @@ def _make_teams(g: GameEntry):
         pace=g.home_pace,
         ortg=g.home_ortg,
         drtg=g.home_drtg,
-        injury_adj=g.home_injury_adj,
+        injury_adj=g.home_injury_adj * injury_stacking_multiplier(g.home_n_key_out),
         pace_mult=home_fatigue.pace_mult,
         ortg_mult=home_fatigue.ortg_mult,
         drtg_mult=home_fatigue.drtg_mult,
@@ -105,7 +116,7 @@ def _make_teams(g: GameEntry):
         pace=g.away_pace,
         ortg=g.away_ortg,
         drtg=g.away_drtg,
-        injury_adj=g.away_injury_adj,
+        injury_adj=g.away_injury_adj * injury_stacking_multiplier(g.away_n_key_out),
         pace_mult=away_fatigue.pace_mult,
         ortg_mult=away_fatigue.ortg_mult,
         drtg_mult=away_fatigue.drtg_mult,
