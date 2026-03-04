@@ -88,8 +88,8 @@
         "unit": "python -m pytest test_correlations.py test_outcome_model.py test_calibration_guards.py -v --tb=short",
         "lint": "ruff check correlations.py outcome_model.py run_tonight.py"
       },
-      "passed": false,
-      "verificationRef": null
+      "passed": true,
+      "verificationRef": "verification-log.jsonl"
     },
     {
       "id": "STORY-002",
