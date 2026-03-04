@@ -14,7 +14,7 @@ Simulates all 10 games, outputs:
 import argparse
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -44,6 +44,27 @@ MIN_WIN_PROB_BET = 0.52  # don't recommend ML bets below this threshold
 MIN_COVER_PROB_BET = 0.535  # require beat-vig-ish hit rate for spread/total plays
 DEFAULT_LIVE_ODDS_COVERAGE = 0.90
 NBA_TZ = ZoneInfo("America/New_York")
+STARTED_GAME_LOOKBACK_MINUTES = (
+    5  # games tipped off more than N minutes ago are excluded
+)
+MAX_RECOMMENDED_PARLAY_LEGS = 4  # auto-parlay capped at this many legs
+MAX_LOTTO_PARLAY_LEGS = 7  # 7+ legs labeled LOTTERY
+
+
+# ── Safety Rail helpers ───────────────────────────────────────────────────────
+def is_game_started(g: GameEntry, now_et: datetime) -> bool:
+    """Return True if the game tipped off more than STARTED_GAME_LOOKBACK_MINUTES ago."""
+    tipoff_et = _parse_tipoff_datetime_et(g, now_et)
+    return tipoff_et < now_et - timedelta(minutes=STARTED_GAME_LOOKBACK_MINUTES)
+
+
+def _classify_parlay(n_legs: int) -> str:
+    """Classify a parlay by leg count."""
+    if n_legs >= MAX_LOTTO_PARLAY_LEGS:
+        return "LOTTERY"
+    if n_legs >= 5:
+        return "HIGH_RISK"
+    return "STANDARD"
 
 
 # ── Calibration helpers ───────────────────────────────────────────────────────
@@ -330,6 +351,16 @@ def main() -> None:
         if not games_to_run:
             print("No games starting in the next 60 minutes ET. Exiting.")
             return
+
+    # Filter out games already in progress
+    now_et = datetime.now(NBA_TZ)
+    filtered_games = []
+    for g in games_to_run:
+        if is_game_started(g, now_et):
+            print(f"⛔ SKIPPED (game in progress): {g.game_id}")
+        else:
+            filtered_games.append(g)
+    games_to_run = filtered_games
 
     print_slate_summary(games_to_run)
     print(f"Running {N_SIMS:,} Monte Carlo simulations per game...\n")

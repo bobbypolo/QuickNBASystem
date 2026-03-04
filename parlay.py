@@ -45,6 +45,7 @@ class ParlayResult:
     parlay_type: str  # "SGP" or "MG"
     book_odds: Optional[int] = None  # sportsbook's offered price
     edge: Optional[float] = None  # true_prob - book_implied_prob
+    is_lottery_grade: bool = False  # True when len(legs) > 4
 
 
 # ── Leg Evaluation ────────────────────────────────────────────────────────────
@@ -122,6 +123,7 @@ def evaluate_sgp(
         parlay_type="SGP",
         book_odds=book_odds,
         edge=edge,
+        is_lottery_grade=len(legs) > 4,
     )
 
 
@@ -178,6 +180,7 @@ def evaluate_mg_parlay(
         parlay_type="MG",
         book_odds=book_odds,
         edge=edge,
+        is_lottery_grade=len(legs) > 4,
     )
 
 
@@ -186,6 +189,8 @@ def print_parlay_result(pr: ParlayResult) -> None:
     """Pretty-print a parlay evaluation result."""
     tag = f"[{pr.parlay_type}]"
     print(f"\n  {tag} {len(pr.legs)}-Leg Parlay")
+    if pr.is_lottery_grade:
+        print("  ⚠️  LOTTERY GRADE — high leg count, very low hit probability")
     print(f"  {'─' * 50}")
     for leg, prob in zip(pr.legs, pr.leg_probs):
         print(f"    Leg: {leg.description:40s} p={prob:.1%}")
