@@ -1,0 +1,59 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/post_compact_restore.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/pre_bash_guard.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/post_bash_capture.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/post_format.py"
+          },
+          {
+            "type": "command",
+            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/post_write_prod_scan.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /c/Users/rober/Documents/'Claude Workflow' && python .claude/hooks/stop_verify_gate.py 2>/dev/null; true"
+          }
+        ]
+      }
+    ]
+  }
+}

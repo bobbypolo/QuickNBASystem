@@ -1,0 +1,42 @@
+{
+  "commands": {
+    "test": "python -m pytest .claude/hooks/tests/ -v",
+    "lint": "ruff check .",
+    "format": "ruff format .",
+    "regression": "python -m pytest .claude/hooks/tests/ -v --tb=short"
+  },
+  "test_patterns": [],
+  "format_timeout_seconds": 30,
+  "qa_runner": {
+    "enabled": true,
+    "skip_steps": [],
+    "manual_steps": [],
+    "diff_coverage_threshold": 80,
+    "production_scan": {
+      "enabled": true,
+      "fail_on_violation": true,
+      "exclude_patterns": ["test_*", "*_test.*"]
+    }
+  },
+  "test_quality": {
+    "min_assertions_per_test": 1,
+    "detect_self_mocks": true,
+    "detect_mock_only": true
+  },
+  "verification_log": {
+    "format": "jsonl",
+    "max_entries": 1000,
+    "path": ".claude/docs/verification-log.jsonl"
+  },
+  "plan_sync": {
+    "mode": "check",
+    "action": "warn"
+  },
+  "external_scanners": {
+    "bandit": { "cmd": "bandit -r {changed_dir} -f json -q", "enabled": false },
+    "semgrep": {
+      "cmd": "semgrep --config=auto {changed_dir} --json -q",
+      "enabled": false
+    }
+  }
+}
