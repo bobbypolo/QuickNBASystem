@@ -2,7 +2,7 @@
   "version": "2.0",
   "planRef": ".claude/docs/PLAN.md",
   "conventionsRef": ".claude/docs/knowledge/conventions.md",
-  "plan_hash": "c5952cb5b5a393a5c4da764d1fc5e6bb09a9943d5f5574a7a98dc5ae90ea2259",
+  "plan_hash": "ab5bc651e020cce3db2a0b45b5512c19f224ea47a0840937248472f5f3e35435",
   "legacyMarkerIds": [],
   "stories": [
     {
@@ -200,8 +200,8 @@
         "unit": "python -m pytest test_pace_engine.py test_outcome_model.py test_quarter_sim.py test_correlated_quarters.py -v --tb=short",
         "lint": "ruff check simulator.py pace_engine.py outcome_model.py"
       },
-      "passed": false,
-      "verificationRef": null
+      "passed": true,
+      "verificationRef": "verification-log.jsonl"
     },
     {
       "id": "STORY-004",
@@ -256,8 +256,8 @@
         "unit": "python -m pytest test_calibration.py test_market_blender.py -v --tb=short",
         "lint": "ruff check calibration.py run_tonight.py"
       },
-      "passed": false,
-      "verificationRef": null
+      "passed": true,
+      "verificationRef": "verification-log.jsonl"
     },
     {
       "id": "STORY-005",
@@ -300,8 +300,8 @@
         "unit": "python -m pytest test_injury_stacking.py test_fatigue.py -v --tb=short",
         "lint": "ruff check game_data.py run_tonight.py"
       },
-      "passed": false,
-      "verificationRef": null
+      "passed": true,
+      "verificationRef": "verification-log.jsonl"
     },
     {
       "id": "STORY-006",
@@ -356,8 +356,8 @@
         "unit": "python -m pytest test_injury_feed.py -v --tb=short",
         "lint": "ruff check injury_feed.py game_data.py run_tonight.py"
       },
-      "passed": false,
-      "verificationRef": null
+      "passed": true,
+      "verificationRef": "verification-log.jsonl"
     },
     {
       "id": "STORY-007",
@@ -406,8 +406,8 @@
         "unit": "python -m pytest test_calibration_log.py -v --tb=short",
         "lint": "ruff check calibration_log.py log_results.py run_tonight.py"
       },
-      "passed": false,
-      "verificationRef": null
+      "passed": true,
+      "verificationRef": "verification-log.jsonl"
     }
   ]
 }
