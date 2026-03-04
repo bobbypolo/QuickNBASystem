@@ -32,6 +32,7 @@ from simulator import (
     format_american,
     simulate_game,
 )
+from calibration import haircut_prob, spread_underdog_cap
 from fatigue import ScheduleContext, compute_fatigue
 from market_blender import blend_probability
 
@@ -65,18 +66,6 @@ def _classify_parlay(n_legs: int) -> str:
     if n_legs >= 5:
         return "HIGH_RISK"
     return "STANDARD"
-
-
-# ── Calibration helpers ───────────────────────────────────────────────────────
-def _spread_confidence_cap(raw_prob: float, abs_spread: float) -> float:
-    """Cap cover probability for large-spread underdogs (historical NBA ATS data)."""
-    if abs_spread >= 13.0:
-        return min(raw_prob, 0.50)
-    if abs_spread >= 10.0:
-        return min(raw_prob, 0.52)
-    if abs_spread >= 8.0:
-        return min(raw_prob, 0.56)
-    return raw_prob
 
 
 # ── Build TeamInput from GameEntry ────────────────────────────────────────────
@@ -212,7 +201,9 @@ def print_game_result(g: GameEntry, result: SimResult, recommendations: list) ->
     spread_flag = ""
     if abs(spread_diff) >= SPREAD_EDGE_THRESHOLD:
         if spread_diff > 0:
-            p_cover = _spread_confidence_cap(blended_h_cover, abs(vegas_s))
+            p_cover = haircut_prob(
+                spread_underdog_cap(blended_h_cover, abs(vegas_s)), N_SIMS
+            )
             if p_cover >= MIN_COVER_PROB_BET:
                 spread_flag = f"  ✅ EDGE: BET {g.home_abbr} {vegas_s:+.1f} ({abs(spread_diff):.1f}pt edge, p={p_cover:.1%})"
                 recommendations.append(
@@ -234,8 +225,12 @@ def print_game_result(g: GameEntry, result: SimResult, recommendations: list) ->
             away_line = -vegas_s
             away_str = f"{g.away_abbr} {away_line:+.1f}"
             raw_a_cover = result.away_cover_prob(away_line)
-            p_cover = _spread_confidence_cap(
-                blend_probability(raw_a_cover, 0.50, "spread").p_blended, abs(away_line)
+            p_cover = haircut_prob(
+                spread_underdog_cap(
+                    blend_probability(raw_a_cover, 0.50, "spread").p_blended,
+                    abs(away_line),
+                ),
+                N_SIMS,
             )
             if p_cover >= MIN_COVER_PROB_BET:
                 spread_flag = f"  ✅ EDGE: BET {away_str} ({abs(spread_diff):.1f}pt edge, p={p_cover:.1%})"
